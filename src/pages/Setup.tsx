@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { scenarios } from "@/lib/data";
 
 const difficultyLevels = [
-  { value: "calm", label: "Calm", emoji: "😊" },
-  { value: "normal", label: "Normal", emoji: "😐" },
-  { value: "challenging", label: "Challenging", emoji: "😰" },
+  { value: "calm", label: "Calm", emoji: "😊", desc: "Relaxed conversation" },
+  { value: "normal", label: "Normal", emoji: "😐", desc: "Realistic tension" },
+  { value: "challenging", label: "Challenging", emoji: "😰", desc: "High pressure" },
 ];
 
-const goals = ["De-escalate", "Show empathy", "Get agreement"];
+const goals = [
+  { label: "De-escalate", emoji: "🕊️" },
+  { label: "Show empathy", emoji: "💖" },
+  { label: "Get agreement", emoji: "🤝" },
+];
 
 const Setup = () => {
   const { scenarioId } = useParams();
@@ -21,84 +25,101 @@ const Setup = () => {
 
   const [difficulty, setDifficulty] = useState("normal");
   const [personality, setPersonality] = useState([50]);
-  const [goal, setGoal] = useState(goals[0]);
+  const [goal, setGoal] = useState(goals[0].label);
 
   const personalityLabel =
-    personality[0] < 33 ? "Calm" : personality[0] < 66 ? "Nervous" : "Aggressive";
+    personality[0] < 33 ? "😌 Calm" : personality[0] < 66 ? "😬 Nervous" : "😡 Aggressive";
 
   return (
-    <div className="mx-auto max-w-lg px-4 pt-6">
-      <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-1 text-sm text-muted-foreground tap-scale">
+    <div className="px-6 py-8 lg:px-10 max-w-3xl">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors tap-scale"
+      >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      <div className="text-center">
-        <span className="text-5xl">{scenario.emoji}</span>
-        <h1 className="mt-3 text-2xl font-bold">{scenario.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{scenario.description}</p>
+      {/* Scenario header */}
+      <div className="mt-6 flex items-start gap-5">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-primary/10 text-5xl shadow-soft">
+          {scenario.emoji}
+        </div>
+        <div>
+          <h1 className="text-2xl font-extrabold lg:text-3xl">{scenario.title}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{scenario.description}</p>
+        </div>
       </div>
 
       {/* Difficulty */}
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <h2 className="mt-10 text-xs font-bold uppercase tracking-widest text-muted-foreground">
         Difficulty
       </h2>
-      <div className="mt-2 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-3">
         {difficultyLevels.map((d) => (
           <Card
             key={d.value}
             onClick={() => setDifficulty(d.value)}
-            className={`cursor-pointer text-center shadow-sm transition-all tap-scale ${
+            className={`cursor-pointer text-center transition-all duration-200 tap-scale ${
               difficulty === d.value
-                ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                : "hover:border-primary/30"
+                ? "border-primary/40 bg-primary/5 shadow-glow ring-1 ring-primary/20"
+                : "border-border shadow-soft hover:border-primary/20 hover:shadow-glow"
             }`}
           >
-            <CardContent className="flex flex-col items-center gap-1 p-4">
-              <span className="text-2xl">{d.emoji}</span>
-              <span className="text-sm font-medium">{d.label}</span>
+            <CardContent className="flex flex-col items-center gap-1.5 p-5">
+              <span className="text-3xl">{d.emoji}</span>
+              <span className="font-bold text-sm">{d.label}</span>
+              <span className="text-[11px] text-muted-foreground">{d.desc}</span>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* AI Personality */}
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        AI Personality — <span className="text-foreground">{personalityLabel}</span>
+      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        AI Personality
       </h2>
-      <div className="mt-3 px-1">
-        <Slider value={personality} onValueChange={setPersonality} max={100} step={1} />
-        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-          <span>Calm</span>
-          <span>Nervous</span>
-          <span>Aggressive</span>
-        </div>
-      </div>
+      <Card className="mt-3 shadow-soft border-border">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium">Character mood</span>
+            <span className="text-sm font-bold">{personalityLabel}</span>
+          </div>
+          <Slider value={personality} onValueChange={setPersonality} max={100} step={1} />
+          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+            <span>Calm</span>
+            <span>Nervous</span>
+            <span>Aggressive</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Goal */}
-      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">
         Your Goal
       </h2>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-3">
         {goals.map((g) => (
           <button
-            key={g}
-            onClick={() => setGoal(g)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-all tap-scale ${
-              goal === g
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-primary/10"
+            key={g.label}
+            onClick={() => setGoal(g.label)}
+            className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-semibold transition-all duration-200 tap-scale ${
+              goal === g.label
+                ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                : "border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground"
             }`}
           >
-            {g}
+            <span className="text-2xl">{g.emoji}</span>
+            {g.label}
           </button>
         ))}
       </div>
 
       {/* Start */}
       <Button
-        className="mt-8 w-full rounded-full py-6 text-base font-bold tap-scale"
+        className="mt-10 w-full rounded-2xl py-6 text-base font-extrabold shadow-glow tap-scale gradient-primary hover:opacity-90 border-none"
         onClick={() => navigate("/simulation", { state: { scenarioId: scenario.id, difficulty, personality: personality[0], goal } })}
       >
+        <Play className="h-5 w-5 mr-2" />
         Start Simulation
       </Button>
     </div>

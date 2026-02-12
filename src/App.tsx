@@ -10,6 +10,7 @@ import Setup from "./pages/Setup";
 import Simulation from "./pages/Simulation";
 import Feedback from "./pages/Feedback";
 import Profile from "./pages/Profile";
+import Stats from "./pages/Stats";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -29,7 +30,7 @@ const App = () => (
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/stats" element={<Profile />} />
+            <Route path="/stats" element={<Stats />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

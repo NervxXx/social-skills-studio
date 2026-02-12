@@ -8,13 +8,13 @@ interface CategoryPillProps {
 const CategoryPill = ({ emoji, name, active, onClick }: CategoryPillProps) => (
   <button
     onClick={onClick}
-    className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all tap-scale hover-lift ${
+    className={`flex shrink-0 items-center gap-2.5 rounded-2xl border px-5 py-2.5 text-sm font-semibold transition-all duration-200 tap-scale ${
       active
-        ? "border-primary bg-primary/10 text-primary"
-        : "border-border bg-card text-foreground hover:bg-primary/5"
+        ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+        : "border-border bg-card text-foreground hover:border-primary/20 hover:bg-primary/5 hover:shadow-soft"
     }`}
   >
-    <span>{emoji}</span>
+    <span className="text-lg">{emoji}</span>
     <span>{name}</span>
   </button>
 );
