@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Clock, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useI18n } from "@/hooks/use-i18n";
 import type { Scenario } from "@/lib/data";
 
 const difficultyDots = (d: Scenario["difficulty"]) => {
@@ -8,20 +9,18 @@ const difficultyDots = (d: Scenario["difficulty"]) => {
   return (
     <div className="flex gap-1 items-center">
       {[1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className={`h-1.5 w-1.5 rounded-full transition-colors ${
-            i <= count ? "bg-primary" : "bg-border"
-          }`}
-        />
+        <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i <= count ? "bg-primary" : "bg-border"}`} />
       ))}
-      <span className="ml-1 text-xs capitalize text-muted-foreground">{d}</span>
     </div>
   );
 };
 
 const ScenarioCard = ({ scenario }: { scenario: Scenario }) => {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const titleKey = `scenario.${scenario.id}.title` as any;
+  const descKey = `scenario.${scenario.id}.desc` as any;
 
   return (
     <Card
@@ -36,11 +35,14 @@ const ScenarioCard = ({ scenario }: { scenario: Scenario }) => {
           </div>
         </div>
         <div>
-          <h3 className="font-bold leading-tight text-foreground">{scenario.title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{scenario.description}</p>
+          <h3 className="font-bold leading-tight text-foreground">{t(titleKey)}</h3>
+          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{t(descKey)}</p>
         </div>
         <div className="flex items-center justify-between pt-1">
-          {difficultyDots(scenario.difficulty)}
+          <div className="flex items-center gap-1">
+            {difficultyDots(scenario.difficulty)}
+            <span className="ml-1 text-xs text-muted-foreground">{t(`difficulty.${scenario.difficulty}` as any)}</span>
+          </div>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             {scenario.duration}m
