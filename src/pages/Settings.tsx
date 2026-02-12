@@ -4,12 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Volume2, Lightbulb, Moon, Bell, Globe, Trash2, LogOut, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/hooks/use-theme";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [voiceInput, setVoiceInput] = useState(false);
   const [showHints, setShowHints] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [hintFrequency, setHintFrequency] = useState([50]);
 
@@ -85,7 +86,7 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">Easier on the eyes at night</p>
               </div>
             </div>
-            <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+            <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
           </div>
           <button className="flex w-full items-center justify-between px-5 py-4 tap-scale">
             <div className="flex items-center gap-4">
