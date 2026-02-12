@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import CategoryPill from "@/components/CategoryPill";
 import ScenarioCard from "@/components/ScenarioCard";
@@ -20,22 +20,31 @@ const Explore = () => {
   });
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-6">
-      <h1 className="text-2xl font-bold">Explore Scenarios</h1>
+    <div className="px-6 py-8 lg:px-10 max-w-5xl">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">Find your next challenge</p>
+          <h1 className="text-2xl font-extrabold lg:text-3xl">Explore Scenarios</h1>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <SlidersHorizontal className="h-4 w-4" />
+          <span className="text-sm font-medium">{filtered.length} scenarios</span>
+        </div>
+      </div>
 
       {/* Search */}
-      <div className="relative mt-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative mt-6">
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search scenarios..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-full pl-10"
+          className="h-12 rounded-2xl bg-card pl-11 text-sm shadow-soft border-border focus-visible:ring-primary/30"
         />
       </div>
 
       {/* Category filters */}
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="mt-5 flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
         <CategoryPill
           emoji="✨"
           name="All"
@@ -54,15 +63,15 @@ const Explore = () => {
       </div>
 
       {/* Difficulty filters */}
-      <div className="mt-2 flex gap-2">
+      <div className="mt-3 flex gap-2">
         {difficulties.map((d) => (
           <button
             key={d}
             onClick={() => setActiveDifficulty(d)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors tap-scale ${
+            className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 tap-scale ${
               activeDifficulty === d
-                ? "bg-secondary text-secondary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "gradient-secondary text-secondary-foreground shadow-sm"
+                : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/20"
             }`}
           >
             {d}
@@ -71,14 +80,16 @@ const Explore = () => {
       </div>
 
       {/* Grid */}
-      <div className="mt-5 grid grid-cols-2 gap-3 pb-6 md:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-6">
         {filtered.map((s) => (
           <ScenarioCard key={s.id} scenario={s} />
         ))}
         {filtered.length === 0 && (
-          <p className="col-span-full py-12 text-center text-muted-foreground">
-            No scenarios match your filters.
-          </p>
+          <div className="col-span-full flex flex-col items-center py-20">
+            <span className="text-5xl">🔍</span>
+            <p className="mt-3 text-lg font-semibold text-foreground">No scenarios found</p>
+            <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
+          </div>
         )}
       </div>
     </div>
