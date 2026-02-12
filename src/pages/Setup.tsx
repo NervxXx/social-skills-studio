@@ -5,55 +5,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { scenarios } from "@/lib/data";
-
-const difficultyLevels = [
-  { value: "calm", label: "Calm", emoji: "😊", desc: "Relaxed conversation" },
-  { value: "normal", label: "Normal", emoji: "😐", desc: "Realistic tension" },
-  { value: "challenging", label: "Challenging", emoji: "😰", desc: "High pressure" },
-];
-
-const goals = [
-  { label: "De-escalate", emoji: "🕊️" },
-  { label: "Show empathy", emoji: "💖" },
-  { label: "Get agreement", emoji: "🤝" },
-];
+import { useI18n } from "@/hooks/use-i18n";
 
 const Setup = () => {
   const { scenarioId } = useParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const scenario = scenarios.find((s) => s.id === scenarioId) || scenarios[0];
+
+  const difficultyLevels = [
+    { value: "calm", labelKey: "setup.calm" as const, emoji: "😊", descKey: "setup.calmDesc" as const },
+    { value: "normal", labelKey: "setup.normal" as const, emoji: "😐", descKey: "setup.normalDesc" as const },
+    { value: "challenging", labelKey: "setup.challenging" as const, emoji: "😰", descKey: "setup.challengingDesc" as const },
+  ];
+
+  const goals = [
+    { labelKey: "setup.deescalate" as const, emoji: "🕊️" },
+    { labelKey: "setup.showEmpathy" as const, emoji: "💖" },
+    { labelKey: "setup.getAgreement" as const, emoji: "🤝" },
+  ];
 
   const [difficulty, setDifficulty] = useState("normal");
   const [personality, setPersonality] = useState([50]);
-  const [goal, setGoal] = useState(goals[0].label);
+  const [goal, setGoal] = useState(goals[0].labelKey);
 
   const personalityLabel =
-    personality[0] < 33 ? "😌 Calm" : personality[0] < 66 ? "😬 Nervous" : "😡 Aggressive";
+    personality[0] < 33 ? t("setup.moodCalm") : personality[0] < 66 ? t("setup.moodNervous") : t("setup.moodAggressive");
 
   return (
     <div className="px-6 py-8 lg:px-10 max-w-3xl">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors tap-scale"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back
+      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors tap-scale">
+        <ArrowLeft className="h-4 w-4" /> {t("setup.back")}
       </button>
 
-      {/* Scenario header */}
       <div className="mt-6 flex items-start gap-5">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-primary/10 text-5xl shadow-soft">
           {scenario.emoji}
         </div>
         <div>
-          <h1 className="text-2xl font-extrabold lg:text-3xl">{scenario.title}</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{scenario.description}</p>
+          <h1 className="text-2xl font-extrabold lg:text-3xl">{t(`scenario.${scenario.id}.title` as any)}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{t(`scenario.${scenario.id}.desc` as any)}</p>
         </div>
       </div>
 
-      {/* Difficulty */}
-      <h2 className="mt-10 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Difficulty
-      </h2>
+      <h2 className="mt-10 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.difficulty")}</h2>
       <div className="mt-3 grid grid-cols-3 gap-3">
         {difficultyLevels.map((d) => (
           <Card
@@ -67,60 +62,53 @@ const Setup = () => {
           >
             <CardContent className="flex flex-col items-center gap-1.5 p-5">
               <span className="text-3xl">{d.emoji}</span>
-              <span className="font-bold text-sm">{d.label}</span>
-              <span className="text-[11px] text-muted-foreground">{d.desc}</span>
+              <span className="font-bold text-sm">{t(d.labelKey)}</span>
+              <span className="text-[11px] text-muted-foreground">{t(d.descKey)}</span>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* AI Personality */}
-      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        AI Personality
-      </h2>
+      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.aiPersonality")}</h2>
       <Card className="mt-3 shadow-soft border-border">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium">Character mood</span>
+            <span className="text-sm font-medium">{t("setup.characterMood")}</span>
             <span className="text-sm font-bold">{personalityLabel}</span>
           </div>
           <Slider value={personality} onValueChange={setPersonality} max={100} step={1} />
           <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>Calm</span>
-            <span>Nervous</span>
-            <span>Aggressive</span>
+            <span>{t("setup.sliderCalm")}</span>
+            <span>{t("setup.sliderNervous")}</span>
+            <span>{t("setup.sliderAggressive")}</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Goal */}
-      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Your Goal
-      </h2>
+      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.yourGoal")}</h2>
       <div className="mt-3 grid grid-cols-3 gap-3">
         {goals.map((g) => (
           <button
-            key={g.label}
-            onClick={() => setGoal(g.label)}
+            key={g.labelKey}
+            onClick={() => setGoal(g.labelKey)}
             className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-semibold transition-all duration-200 tap-scale ${
-              goal === g.label
+              goal === g.labelKey
                 ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
                 : "border-border bg-card text-muted-foreground hover:border-primary/20 hover:text-foreground"
             }`}
           >
             <span className="text-2xl">{g.emoji}</span>
-            {g.label}
+            {t(g.labelKey)}
           </button>
         ))}
       </div>
 
-      {/* Start */}
       <Button
         className="mt-10 w-full rounded-2xl py-6 text-base font-extrabold shadow-glow tap-scale gradient-primary hover:opacity-90 border-none"
-        onClick={() => navigate("/simulation", { state: { scenarioId: scenario.id, difficulty, personality: personality[0], goal } })}
+        onClick={() => navigate("/simulation", { state: { scenarioId: scenario.id, difficulty, personality: personality[0], goal: t(goal as any) } })}
       >
         <Play className="h-5 w-5 mr-2" />
-        Start Simulation
+        {t("setup.startSimulation")}
       </Button>
     </div>
   );
