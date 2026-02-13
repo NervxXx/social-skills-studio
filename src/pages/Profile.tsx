@@ -25,7 +25,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="px-6 py-8 lg:px-10 max-w-4xl">
+    <div className="page-container max-w-3xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold lg:text-3xl">{t("nav.profile")}</h1>
         <Button variant="outline" size="sm" className="rounded-xl tap-scale" onClick={() => navigate("/settings")}>
@@ -33,8 +33,8 @@ const Profile = () => {
         </Button>
       </div>
 
-      <Card className="mt-6 shadow-soft border-border overflow-hidden">
-        <div className="gradient-primary h-24 relative" />
+      <Card className="mt-8 shadow-soft border-border overflow-hidden">
+        <div className="gradient-primary h-20 sm:h-24" />
         <CardContent className="relative px-6 pb-6">
           <div className="flex flex-col items-center sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-10">
             <div className="relative">
@@ -47,37 +47,37 @@ const Profile = () => {
             </div>
             <div className="text-center sm:text-left sm:pb-1">
               <h2 className="text-xl font-extrabold">Alex Johnson</h2>
-              <p className="text-sm text-muted-foreground">{t("home.level")} · 320 / 500 XP</p>
-              <Progress value={64} className="mt-2 h-2 w-48 rounded-full" />
+              <p className="text-sm text-muted-foreground mt-0.5">{t("home.level")} · 320 / 500 XP</p>
+              <Progress value={64} className="mt-2.5 h-2 w-48 rounded-full" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="mt-6 grid grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-3 gap-3">
         {stats.map((s) => (
           <Card key={s.labelKey} className="shadow-soft border-border">
-            <CardContent className="flex flex-col items-center p-5">
+            <CardContent className="flex flex-col items-center p-4 sm:p-5">
               <s.icon className="h-5 w-5 text-primary mb-2" />
-              <span className="text-2xl font-extrabold">{s.value}{s.suffix || ""}</span>
-              <span className="text-xs text-muted-foreground">{t(s.labelKey)}</span>
+              <span className="text-xl font-extrabold sm:text-2xl">{s.value}{s.suffix || ""}</span>
+              <span className="text-[11px] text-muted-foreground mt-0.5">{t(s.labelKey)}</span>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="section-gap grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className="shadow-soft border-border">
           <CardContent className="p-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("profile.skillProgress")}</h2>
-            <div className="mt-4 space-y-4">
+            <h2 className="section-title">{t("profile.skillProgress")}</h2>
+            <div className="mt-5 space-y-5">
               {skills.map((s) => (
                 <div key={s.key}>
-                  <div className="mb-1.5 flex justify-between text-sm">
+                  <div className="mb-2 flex justify-between text-sm">
                     <span className="font-semibold">{t(s.key)}</span>
                     <span className="font-bold text-primary">{s.score}%</span>
                   </div>
-                  <Progress value={s.score} className="h-2.5 rounded-full" />
+                  <Progress value={s.score} className="h-2 rounded-full" />
                 </div>
               ))}
             </div>
@@ -86,10 +86,10 @@ const Profile = () => {
 
         <Card className="shadow-soft border-border">
           <CardContent className="p-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("profile.achievements")}</h2>
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <h2 className="section-title">{t("profile.achievements")}</h2>
+            <div className="mt-5 grid grid-cols-3 gap-3">
               {achievements.map((a) => (
-                <div key={a.id} className={`flex flex-col items-center gap-1 rounded-2xl border p-3 text-center transition-all ${a.unlocked ? "border-primary/20 bg-primary/5 hover-lift" : "opacity-40 grayscale border-border"}`}>
+                <div key={a.id} className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all ${a.unlocked ? "border-primary/20 bg-primary/5 hover-lift" : "opacity-40 grayscale border-border"}`}>
                   <span className="text-2xl">{a.emoji}</span>
                   <span className="text-[11px] font-semibold leading-tight">{t(`ach.${a.id}` as any)}</span>
                   {a.unlocked && <span className="text-[10px] text-primary font-medium">{t("profile.unlocked")}</span>}
