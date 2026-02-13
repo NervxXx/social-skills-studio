@@ -33,23 +33,23 @@ const Setup = () => {
     personality[0] < 33 ? t("setup.moodCalm") : personality[0] < 66 ? t("setup.moodNervous") : t("setup.moodAggressive");
 
   return (
-    <div className="px-6 py-8 lg:px-10 max-w-3xl">
+    <div className="page-container max-w-2xl">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors tap-scale">
         <ArrowLeft className="h-4 w-4" /> {t("setup.back")}
       </button>
 
-      <div className="mt-6 flex items-start gap-5">
+      <div className="mt-8 flex flex-col sm:flex-row items-start gap-5">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-primary/10 text-5xl shadow-soft">
           {scenario.emoji}
         </div>
         <div>
           <h1 className="text-2xl font-extrabold lg:text-3xl">{t(`scenario.${scenario.id}.title` as any)}</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{t(`scenario.${scenario.id}.desc` as any)}</p>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t(`scenario.${scenario.id}.desc` as any)}</p>
         </div>
       </div>
 
-      <h2 className="mt-10 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.difficulty")}</h2>
-      <div className="mt-3 grid grid-cols-3 gap-3">
+      <h2 className="section-gap section-title">{t("setup.difficulty")}</h2>
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {difficultyLevels.map((d) => (
           <Card
             key={d.value}
@@ -60,7 +60,7 @@ const Setup = () => {
                 : "border-border shadow-soft hover:border-primary/20 hover:shadow-glow"
             }`}
           >
-            <CardContent className="flex flex-col items-center gap-1.5 p-5">
+            <CardContent className="flex flex-col items-center gap-1.5 p-4 sm:p-5">
               <span className="text-3xl">{d.emoji}</span>
               <span className="font-bold text-sm">{t(d.labelKey)}</span>
               <span className="text-[11px] text-muted-foreground">{t(d.descKey)}</span>
@@ -69,15 +69,15 @@ const Setup = () => {
         ))}
       </div>
 
-      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.aiPersonality")}</h2>
-      <Card className="mt-3 shadow-soft border-border">
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between mb-4">
+      <h2 className="section-gap section-title">{t("setup.aiPersonality")}</h2>
+      <Card className="mt-4 shadow-soft border-border">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-5">
             <span className="text-sm font-medium">{t("setup.characterMood")}</span>
             <span className="text-sm font-bold">{personalityLabel}</span>
           </div>
           <Slider value={personality} onValueChange={setPersonality} max={100} step={1} />
-          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+          <div className="mt-3 flex justify-between text-xs text-muted-foreground">
             <span>{t("setup.sliderCalm")}</span>
             <span>{t("setup.sliderNervous")}</span>
             <span>{t("setup.sliderAggressive")}</span>
@@ -85,8 +85,8 @@ const Setup = () => {
         </CardContent>
       </Card>
 
-      <h2 className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("setup.yourGoal")}</h2>
-      <div className="mt-3 grid grid-cols-3 gap-3">
+      <h2 className="section-gap section-title">{t("setup.yourGoal")}</h2>
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {goals.map((g) => (
           <button
             key={g.labelKey}
@@ -104,7 +104,7 @@ const Setup = () => {
       </div>
 
       <Button
-        className="mt-10 w-full rounded-2xl py-6 text-base font-extrabold shadow-glow tap-scale gradient-primary hover:opacity-90 border-none"
+        className="section-gap w-full rounded-2xl py-6 text-base font-extrabold shadow-glow tap-scale gradient-primary hover:opacity-90 border-none mb-8"
         onClick={() => navigate("/simulation", { state: { scenarioId: scenario.id, difficulty, personality: personality[0], goal: t(goal as any) } })}
       >
         <Play className="h-5 w-5 mr-2" />

@@ -27,65 +27,65 @@ const Stats = () => {
   const maxSessions = Math.max(...weeklyData.map((d) => d.sessions), 1);
 
   return (
-    <div className="px-6 py-8 lg:px-10 max-w-5xl">
+    <div className="page-container">
       <div>
         <p className="text-sm text-muted-foreground">{t("stats.subtitle")}</p>
-        <h1 className="text-2xl font-extrabold lg:text-3xl">{t("stats.title")}</h1>
+        <h1 className="text-2xl font-extrabold lg:text-3xl mt-0.5">{t("stats.title")}</h1>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card className="shadow-soft border-border">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-2xl bg-primary/10 p-3"><Target className="h-5 w-5 text-primary" /></div>
+          <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+            <div className="rounded-2xl bg-primary/10 p-2.5"><Target className="h-5 w-5 text-primary" /></div>
             <div>
-              <p className="text-2xl font-extrabold">12</p>
-              <p className="text-xs text-muted-foreground">{t("stats.totalSessions")}</p>
+              <p className="text-xl font-extrabold sm:text-2xl">12</p>
+              <p className="text-[11px] text-muted-foreground">{t("stats.totalSessions")}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="shadow-soft border-border">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-2xl bg-primary/10 p-3"><Flame className="h-5 w-5 text-primary" /></div>
+          <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+            <div className="rounded-2xl bg-primary/10 p-2.5"><Flame className="h-5 w-5 text-primary" /></div>
             <div>
-              <p className="text-2xl font-extrabold">3</p>
-              <p className="text-xs text-muted-foreground">{t("stats.dayStreak")}</p>
+              <p className="text-xl font-extrabold sm:text-2xl">3</p>
+              <p className="text-[11px] text-muted-foreground">{t("stats.dayStreak")}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="shadow-soft border-border">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-2xl bg-secondary/10 p-3"><TrendingUp className="h-5 w-5 text-secondary" /></div>
+          <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+            <div className="rounded-2xl bg-secondary/10 p-2.5"><TrendingUp className="h-5 w-5 text-secondary" /></div>
             <div>
-              <p className="text-2xl font-extrabold">78%</p>
-              <p className="text-xs text-muted-foreground">{t("stats.avgScore")}</p>
+              <p className="text-xl font-extrabold sm:text-2xl">78%</p>
+              <p className="text-[11px] text-muted-foreground">{t("stats.avgScore")}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="shadow-soft border-border">
-          <CardContent className="flex items-center gap-4 p-5">
-            <div className="rounded-2xl bg-success/10 p-3"><Award className="h-5 w-5 text-success" /></div>
+          <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+            <div className="rounded-2xl bg-success/10 p-2.5"><Award className="h-5 w-5 text-success" /></div>
             <div>
-              <p className="text-2xl font-extrabold">94%</p>
-              <p className="text-xs text-muted-foreground">{t("stats.bestScore")}</p>
+              <p className="text-xl font-extrabold sm:text-2xl">94%</p>
+              <p className="text-[11px] text-muted-foreground">{t("stats.bestScore")}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="section-gap grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className="shadow-soft border-border">
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-8">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("stats.thisWeek")}</h2>
+              <h2 className="section-title">{t("stats.thisWeek")}</h2>
             </div>
-            <div className="flex items-end justify-between gap-2 h-40">
+            <div className="flex items-end justify-between gap-2 h-36">
               {weeklyData.map((d) => (
                 <div key={d.key} className="flex flex-1 flex-col items-center gap-2">
                   <div className="relative w-full flex justify-center">
-                    <div className={`w-8 rounded-xl transition-all duration-500 ${d.sessions > 0 ? "gradient-primary" : "bg-muted"}`} style={{ height: `${Math.max((d.sessions / maxSessions) * 120, 8)}px` }} />
+                    <div className={`w-7 sm:w-8 rounded-xl transition-all duration-500 ${d.sessions > 0 ? "gradient-primary" : "bg-muted"}`} style={{ height: `${Math.max((d.sessions / maxSessions) * 110, 8)}px` }} />
                   </div>
-                  <span className="text-xs font-medium text-muted-foreground">{t(d.key)}</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">{t(d.key)}</span>
                 </div>
               ))}
             </div>
@@ -94,20 +94,20 @@ const Stats = () => {
 
         <Card className="shadow-soft border-border">
           <CardContent className="p-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">{t("stats.skillTrends")}</h2>
+            <h2 className="section-title mb-8">{t("stats.skillTrends")}</h2>
             <div className="space-y-5">
               {skillHistory.map((s) => {
                 const diff = s.current - s.previous;
                 return (
                   <div key={s.key}>
-                    <div className="mb-1.5 flex justify-between text-sm">
+                    <div className="mb-2 flex justify-between text-sm">
                       <span className="font-semibold">{t(s.key)}</span>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}{diff}%</span>
                         <span className="font-bold text-primary">{s.current}%</span>
                       </div>
                     </div>
-                    <Progress value={s.current} className="h-2.5 rounded-full" />
+                    <Progress value={s.current} className="h-2 rounded-full" />
                   </div>
                 );
               })}
@@ -116,20 +116,20 @@ const Stats = () => {
         </Card>
       </div>
 
-      <div className="mt-8 pb-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{t("stats.recentSessions")}</h2>
-        <div className="space-y-2">
+      <div className="section-gap pb-8">
+        <h2 className="section-title mb-4">{t("stats.recentSessions")}</h2>
+        <div className="space-y-2.5">
           {recentScenarios.map((r) => {
             const s = scenarios.find((sc) => sc.id === r.scenarioId)!;
             const dateKey = r.date === "Yesterday" ? "recent.yesterday" : "recent.2daysAgo";
             return (
               <Card key={r.scenarioId} className="shadow-soft border-border hover-lift cursor-pointer">
-                <CardContent className="flex items-center justify-between p-4">
+                <CardContent className="flex items-center justify-between p-4 sm:p-5">
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">{s.emoji}</span>
                     <div>
-                      <p className="font-bold">{t(`scenario.${s.id}.title` as any)}</p>
-                      <p className="text-xs text-muted-foreground">{t(dateKey as any)} · {t(`cat.${s.category}` as any)}</p>
+                      <p className="font-bold text-sm sm:text-base">{t(`scenario.${s.id}.title` as any)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t(dateKey as any)} · {t(`cat.${s.category}` as any)}</p>
                     </div>
                   </div>
                   <span className="text-lg font-extrabold text-primary">{r.score}%</span>
