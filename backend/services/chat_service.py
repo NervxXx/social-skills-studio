@@ -28,8 +28,10 @@ async def get_ai_response(
     difficulty: str = "normal",
     personality: int = 50,
     user_goal: str = "Show empathy",
-) -> tuple[str, str, int, int]:
-    """Get AI response. Returns (reply, thought, emotion_after, empathy_delta)."""
+    ai_style: str = "realistic",
+    focus_skill: str = "all",
+) -> dict:
+    """Get AI response. Returns dict with reply, emotion_after, empathy_delta, clarity, emotional_control, turn_quality."""
     if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "dummy-key":
         raise ValueError("OPENROUTER_API_KEY not configured")
 
@@ -44,6 +46,8 @@ async def get_ai_response(
         difficulty=difficulty,
         personality=personality,
         user_goal=user_goal,
+        ai_style=ai_style,
+        focus_skill=focus_skill,
     )
 
 

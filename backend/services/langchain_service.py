@@ -6,42 +6,56 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.tools import tool
 
 from langchain_config import config
 from prompts import build_simulation_system, SCENARIO_ROLES, DEFAULT_ROLE
 
 logger = logging.getLogger(__name__)
 
-@tool(return_direct=True)
-def submit_response(reply: str, thought: str, emotion_score: int, empathy_delta: int):
-    """
-    Submits the final response to the user along with internal thoughts and scores.
-    Args:
-        reply: Your response text (1-3 sentences).
-        thought: Your character's internal monologue or hidden feelings.
-        emotion_score: Your character's internal mood after this turn (0-100).
-        empathy_delta: How well the user communicated in this turn (-5 to 10).
-    """
-    return {"reply": reply, "thought": thought, "emotion_after": emotion_score, "empathy_delta": empathy_delta}
+# Full format: |E:65|A:3|CL:70|EC:80|Q:7|
+FULL_RATING = re.compile(
+    r"\|\s*E\s*:\s*(\d+)\s*\|\s*A\s*:\s*([+-]?\d+)\s*\|"
+    r"\s*CL\s*:\s*(\d+)\s*\|\s*EC\s*:\s*(\d+)\s*\|\s*Q\s*:\s*(\d+)\s*\|",
+    re.IGNORECASE,
+)
+# Legacy format: |E:65|A:3|
+LEGACY_RATING = re.compile(r"\|\s*E\s*:\s*(\d+)\s*\|\s*A\s*:\s*([+-]?\d+)\s*\|", re.IGNORECASE)
 
-RATING_PATTERN = re.compile(r"\|\s*E\s*:\s*(\d+)\s*\|\s*A\s*:\s*(-?\d+)\s*\|", re.IGNORECASE)
-RATING_PATTERN_ALT = re.compile(r"\|E:(\d+)\|A:(-?\d+)\|", re.IGNORECASE)
+META_STRIP = re.compile(
+    r"\*{0,2}(?:thought|emotion_?score|empathy_?delta|emotion|internal|clarity|emotional.control|"
+    r"analysis|technique|cognitive|evaluation|word.choice|tone|red.flag|mood)[:\s].*",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
-def _parse_response_with_rating(content: str) -> Tuple[str, int, int]:
-    """Извлекает reply и |E:xx|A:yy| из ответа. Возвращает (reply, emotion_after, empathy_delta)."""
-    match = RATING_PATTERN.search(content) or RATING_PATTERN_ALT.search(content)
-    if match:
-        emotion = int(match.group(1))
-        empathy_delta = int(match.group(2))
-        reply = content[: match.start()].strip()
-        reply = re.sub(r"\n+$", "", reply)
-        return reply, min(100, max(0, emotion)), max(-5, min(10, empathy_delta))
-    reply = content.strip()
-    return reply, 60, 5  # defaults if parsing fails
+def _parse_response_with_rating(content: str) -> dict:
+    """Parse reply and rating tags. Returns dict with reply, emotion_after, empathy_delta, clarity, emotional_control, turn_quality."""
+    defaults = {"emotion_after": 60, "empathy_delta": 5, "clarity": 65, "emotional_control": 70, "turn_quality": 5}
+
+    full = FULL_RATING.search(content)
+    if full:
+        reply = content[: full.start()].strip().rstrip("\n")
+        return {
+            "reply": reply,
+            "emotion_after": min(100, max(0, int(full.group(1)))),
+            "empathy_delta": max(-5, min(10, int(full.group(2)))),
+            "clarity": min(100, max(0, int(full.group(3)))),
+            "emotional_control": min(100, max(0, int(full.group(4)))),
+            "turn_quality": min(10, max(1, int(full.group(5)))),
+        }
+
+    legacy = LEGACY_RATING.search(content)
+    if legacy:
+        reply = content[: legacy.start()].strip().rstrip("\n")
+        return {
+            "reply": reply,
+            "emotion_after": min(100, max(0, int(legacy.group(1)))),
+            "empathy_delta": max(-5, min(10, int(legacy.group(2)))),
+            **{k: defaults[k] for k in ("clarity", "emotional_control", "turn_quality")},
+        }
+
+    reply = META_STRIP.sub("", content).strip().rstrip("\n")
+    return {"reply": reply if reply else content.strip(), **defaults}
 
 
 class LangChainService:
@@ -71,7 +85,6 @@ class LangChainService:
             llm_params["extra_body"] = model_config["extra_body"]
             
         self.llm = ChatOpenAI(**llm_params)
-        self.tools = [submit_response]
 
     async def generate_simulation_response(
         self,
@@ -83,8 +96,10 @@ class LangChainService:
         difficulty: str = "normal",
         personality: int = 50,
         user_goal: str = "Show empathy",
-    ) -> Tuple[str, str, int, int]:
-        """Генерирует ответ AI. Возвращает (reply, emotion_after, empathy_delta)."""
+        ai_style: str = "realistic",
+        focus_skill: str = "all",
+    ) -> dict:
+        """Генерирует ответ AI. Возвращает dict с reply, emotion_after, empathy_delta, clarity, emotional_control, turn_quality."""
         lang_rule = (
             "You MUST respond ONLY in Russian. All your messages must be in Russian."
             if language == "ru"
@@ -98,81 +113,26 @@ class LangChainService:
             difficulty=difficulty,
             personality=personality,
             user_goal=user_goal,
-            include_rating_suffix=False, # We use the tool for ratings now
+            ai_style=ai_style,
+            focus_skill=focus_skill,
+            include_rating_suffix=True,
         )
-        
-        # Create an agent prompt
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system + "\n\nYou are an autonomous agent. Use your tools to provide the final response and scores. "
-                       "You MUST use the 'submit_response' tool to finish the turn."),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
-        
-        # Build the agent
-        agent = create_tool_calling_agent(self.llm, self.tools, prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=True)
-
-        # Convert messages to chat history, excluding the last user message which goes into {input}
-        history: List[BaseMessage] = []
-        user_input = "Hello" # Fallback
-        
-        if messages:
-            last_msg = messages[-1]
-            if last_msg.get("sender") == "user":
-                user_input = last_msg.get("text", "")
-                messages_for_history = messages[:-1]
+        lc_messages: List[BaseMessage] = [SystemMessage(content=system)]
+        for m in messages:
+            text = m.get("text", "").strip()
+            if not text:
+                continue
+            if m.get("sender") == "user":
+                lc_messages.append(HumanMessage(content=text))
             else:
-                messages_for_history = messages
-            
-            for m in messages_for_history:
-                text = m.get("text", "").strip()
-                if not text: continue
-                if m.get("sender") == "user":
-                    history.append(HumanMessage(content=text))
-                else:
-                    history.append(AIMessage(content=text))
+                lc_messages.append(AIMessage(content=text))
 
         try:
-            result = await agent_executor.ainvoke({
-                "input": user_input,
-                "chat_history": history
-            })
-            
-            output = result.get("output", "")
-            
-            # If return_direct=True worked, output is the dict from submit_response
-            if isinstance(output, dict) and "reply" in output:
-                return (
-                    output.get("reply", ""),
-                    output.get("thought", ""),
-                    output.get("emotion_after", 60),
-                    output.get("empathy_delta", 5)
-                )
-            
-            # Fallback: if it's a string, maybe it has the E:nn|A:nn format
-            if isinstance(output, str):
-                if "|" in output:
-                    reply, e, a = _parse_response_with_rating(output)
-                    return reply, "", e, a
-                return output, "", 60, 5
-            
-            # Fallback: check intermediate steps if return_direct failed for some reason
-            for step in result.get("intermediate_steps", []):
-                action, observation = step
-                if action.tool == "submit_response" and isinstance(observation, dict):
-                    return (
-                        observation.get("reply", ""),
-                        observation.get("thought", ""),
-                        observation.get("emotion_after", 60),
-                        observation.get("empathy_delta", 5)
-                    )
-                
-            return str(output), "", 60, 5
-            
+            response = await self.llm.ainvoke(lc_messages)
+            content = (response.content or "").strip()
+            return _parse_response_with_rating(content)
         except Exception as e:
-            logger.error(f"Agent execution error: {e}")
+            logger.error(f"LangChain/OpenRouter error: {e}")
             raise
 
     async def analyze_feedback(

@@ -11,10 +11,11 @@ class Scenario(SQLModel, table=True):
     external_id: str = Field(unique=True, index=True)
     title: str
     emoji: str = "💬"
-    category_id: str  # external_id of category
-    difficulty: str = Field(default="medium")  # easy, medium, hard
-    duration: int = Field(default=5)  # minutes
+    category_id: str
+    difficulty: str = Field(default="medium")
+    duration: int = Field(default=5)
     description: str = ""
+    required_level: int = Field(default=1)
 
 
 class ScenarioResponse(SQLModel):
@@ -25,3 +26,4 @@ class ScenarioResponse(SQLModel):
     difficulty: str
     duration: int
     description: str
+    required_level: int = 1

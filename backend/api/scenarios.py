@@ -41,6 +41,7 @@ def list_scenarios(
             difficulty=s.difficulty,
             duration=s.duration,
             description=s.description,
+            required_level=s.required_level,
         )
         for s in scenarios
     ]
@@ -62,4 +63,5 @@ def get_scenario(scenario_id: str, db: Session = Depends(get_session)):
         difficulty=s.difficulty,
         duration=s.duration,
         description=s.description,
+        required_level=s.required_level,
     )

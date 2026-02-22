@@ -5,18 +5,23 @@ import { Input } from "@/components/ui/input";
 import CategoryPill from "@/components/CategoryPill";
 import ScenarioCard from "@/components/ScenarioCard";
 import { categories as fallbackCategories, scenarios as fallbackScenarios } from "@/lib/data";
-import { scenariosApi, type ScenarioResponse } from "@/lib/api";
+import { scenariosApi, profilesApi, type ScenarioResponse } from "@/lib/api";
 import { useI18n } from "@/hooks/use-i18n";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Explore = () => {
   const { t } = useI18n();
+  const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(categoryFromUrl);
   const [activeDifficulty, setActiveDifficulty] = useState<string>("all");
   const [categories, setCategories] = useState(fallbackCategories);
-  const [scenarios, setScenarios] = useState<ScenarioResponse[]>(fallbackScenarios);
+  const [scenarios, setScenarios] = useState<ScenarioResponse[]>(
+    fallbackScenarios.map((s) => ({ ...s, required_level: s.required_level ?? 1 }))
+  );
+  const [userLevel, setUserLevel] = useState(1);
 
   useEffect(() => {
     setActiveCategory(categoryFromUrl);
@@ -26,8 +31,14 @@ const Explore = () => {
     scenariosApi.getCategories().then(setCategories).catch(() => {});
     scenariosApi.getScenarios(activeCategory || undefined, activeDifficulty === "all" ? undefined : activeDifficulty)
       .then(setScenarios)
-      .catch(() => setScenarios(fallbackScenarios));
+      .catch(() => setScenarios(fallbackScenarios.map((s) => ({ ...s, required_level: s.required_level ?? 1 }))));
   }, [activeCategory, activeDifficulty]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      profilesApi.getMe().then((p) => setUserLevel(p.level)).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const filtered = scenarios.filter((s) => {
     const title = (t(`scenario.${s.id}.title` as any) || s.title).toLowerCase();
@@ -94,7 +105,15 @@ const Explore = () => {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-8">
         {filtered.map((s) => (
-          <ScenarioCard key={s.id} scenario={{ ...s, difficulty: (s.difficulty || "medium") as "easy" | "medium" | "hard" }} />
+          <ScenarioCard
+            key={s.id}
+            scenario={{
+              ...s,
+              difficulty: (s.difficulty || "medium") as "easy" | "medium" | "hard",
+              required_level: s.required_level ?? 1,
+            }}
+            userLevel={userLevel}
+          />
         ))}
         {filtered.length === 0 && (
           <div className="col-span-full flex flex-col items-center py-24">

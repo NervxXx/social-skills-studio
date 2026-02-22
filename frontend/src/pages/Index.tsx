@@ -136,7 +136,7 @@ const Index = () => {
         <h2 className="section-title">{t("home.recommended")}</h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(scenarios.length > 1 ? scenarios.slice(1, 4) : fallbackScenarios.slice(1, 4)).map((s) => (
-            <ScenarioCard key={s.id} scenario={{ ...s, difficulty: (s.difficulty || "medium") as "easy" | "medium" | "hard" }} />
+            <ScenarioCard key={s.id} scenario={{ ...s, difficulty: (s.difficulty || "medium") as "easy" | "medium" | "hard", required_level: s.required_level ?? 1 }} userLevel={level} />
           ))}
         </div>
       </div>

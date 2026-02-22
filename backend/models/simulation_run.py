@@ -26,6 +26,10 @@ class SimulationRunCreate(SQLModel):
     clarity_score: Optional[int] = None
     emotional_control_score: Optional[int] = None
     assertiveness_score: Optional[int] = None
+    difficulty: str = "normal"
+    personality: int = 50
+    session_length: str = "medium"
+    turn_count: int = 0
 
 
 class SimulationRunResponse(SQLModel):
@@ -33,3 +37,4 @@ class SimulationRunResponse(SQLModel):
     scenario_id: str
     score: int
     date: str
+    xp_earned: int = 0

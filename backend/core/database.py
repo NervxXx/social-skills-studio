@@ -29,3 +29,18 @@ def create_db_and_tables():
     from models.simulation_run import SimulationRun
 
     SQLModel.metadata.create_all(engine)
+    _run_migrations()
+
+
+def _run_migrations():
+    """Lightweight column migrations for existing tables."""
+    from sqlalchemy import text, inspect
+
+    insp = inspect(engine)
+    if insp.has_table("scenario"):
+        cols = {c["name"] for c in insp.get_columns("scenario")}
+        if "required_level" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE scenario ADD COLUMN required_level INTEGER NOT NULL DEFAULT 1"
+                ))

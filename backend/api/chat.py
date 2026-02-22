@@ -26,6 +26,8 @@ class ChatRequest(BaseModel):
     difficulty: str = "normal"  # calm, normal, challenging
     personality: int = 50  # 0-100: calm / nervous / aggressive (AI character mood)
     user_goal: str = "Show empathy"
+    ai_style: str = "realistic"  # realistic, expressive, laconic
+    focus_skill: str = "all"  # all, empathy, clarity, control
 
 
 @router.post("/simulate")
@@ -43,7 +45,7 @@ async def chat_simulate(
     messages_dict = [{"sender": m.sender, "text": m.text} for m in data.messages]
 
     try:
-        reply, thought, emotion_after, empathy_delta = await get_ai_response(
+        result = await get_ai_response(
             scenario_id=data.scenario_id,
             scenario_title=data.scenario_title,
             scenario_description=data.scenario_description,
@@ -52,13 +54,10 @@ async def chat_simulate(
             difficulty=data.difficulty,
             personality=data.personality,
             user_goal=data.user_goal,
+            ai_style=data.ai_style,
+            focus_skill=data.focus_skill,
         )
-        return {
-            "reply": reply,
-            "thought": thought,
-            "emotion_after": emotion_after,
-            "empathy_delta": empathy_delta,
-        }
+        return result
     except ValueError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

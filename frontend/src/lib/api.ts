@@ -148,6 +148,7 @@ export interface ScenarioResponse {
   difficulty: string;
   duration: number;
   description: string;
+  required_level: number;
 }
 
 export const scenariosApi = {
@@ -185,16 +186,42 @@ export interface SimulationRunResponse {
   scenario_id: string;
   score: number;
   date: string;
+  xp_earned: number;
 }
 
 export const simulationsApi = {
-  save: (data: { scenario_id: string; score: number; empathy_score?: number; clarity_score?: number; emotional_control_score?: number; assertiveness_score?: number }) =>
-    api.post<SimulationRunResponse>("/simulations", data),
+  save: (data: {
+    scenario_id: string;
+    score: number;
+    empathy_score?: number;
+    clarity_score?: number;
+    emotional_control_score?: number;
+    assertiveness_score?: number;
+    difficulty?: string;
+    personality?: number;
+    session_length?: string;
+    turn_count?: number;
+  }) => api.post<SimulationRunResponse>("/simulations", data),
   getRecent: (limit?: number) =>
     api.get<SimulationRunResponse[]>(`/simulations/recent${limit ? `?limit=${limit}` : ""}`),
 };
 
 // Stats API (auth required)
+export interface PersonalityTraits {
+  empathy_orientation: number;
+  assertiveness_drive: number;
+  composure_index: number;
+  clarity_precision: number;
+  adaptability: number;
+  persistence: number;
+}
+
+export interface PersonalityProfile {
+  traits: PersonalityTraits;
+  archetype: string;
+  sessions_analyzed: number;
+}
+
 export interface UserStatsResponse {
   total_sessions: number;
   avg_score: number;
@@ -203,6 +230,7 @@ export interface UserStatsResponse {
   weekly_sessions: number[];
   skills: { empathy: number; clarity: number; emotional_control: number; assertiveness: number };
   achievements: string[];
+  personality: PersonalityProfile;
 }
 
 export const statsApi = {
@@ -223,8 +251,17 @@ export const chatApi = {
     difficulty?: string;
     personality?: number;
     user_goal?: string;
+    ai_style?: string;
+    focus_skill?: string;
   }) =>
-    api.post<{ reply: string; thought?: string; emotion_after?: number; empathy_delta?: number }>("/chat/simulate", data),
+    api.post<{
+      reply: string;
+      emotion_after?: number;
+      empathy_delta?: number;
+      clarity?: number;
+      emotional_control?: number;
+      turn_quality?: number;
+    }>("/chat/simulate", data),
   analyzeFeedback: (data: { scenario_id: string; scenario_title: string; messages: { sender: string; text: string }[]; score: number; language: string }) =>
     api.post<{ skills: Record<string, number>; positives: { phrase: string; note: string }[]; negatives: { phrase: string; note: string }[]; tip: string }>("/chat/analyze-feedback", data),
 };

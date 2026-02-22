@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { RotateCcw, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
+import { RotateCcw, ArrowRight, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import { scenarios as fallbackScenarios } from "@/lib/data";
 import { getScenarioById, chatApi } from "@/lib/api";
 import { useI18n } from "@/hooks/use-i18n";
@@ -55,8 +55,15 @@ const Feedback = () => {
   const scoreFromState = (location.state as any)?.score as number | undefined;
   const messagesFromState = (location.state as any)?.messages as { text: string; sender: string }[] | undefined;
   const scenarioFromState = (location.state as any)?.scenario;
+  const difficultyFromState = (location.state as any)?.difficulty || "normal";
+  const personalityFromState = (location.state as any)?.personality ?? 50;
+  const sessionLengthFromState = (location.state as any)?.sessionLength || "medium";
+  const turnCountFromState = (location.state as any)?.turnCount ?? 0;
+  const clarityFromState = (location.state as any)?.clarity ?? 0;
+  const ecFromState = (location.state as any)?.emotionalControl ?? 0;
   const [scenario, setScenario] = useState(scenarioFromState || fallbackScenarios.find((s) => s.id === scenarioId) || fallbackScenarios[0]);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
+  const [xpEarned, setXpEarned] = useState(0);
   const overallScore = scoreFromState ?? 0;
 
   useEffect(() => {
@@ -69,11 +76,19 @@ const Feedback = () => {
         scenario_id: scenarioId,
         score: scoreFromState,
         empathy_score: scoreFromState,
+        clarity_score: clarityFromState,
+        emotional_control_score: ecFromState,
+        difficulty: difficultyFromState,
+        personality: personalityFromState,
+        session_length: sessionLengthFromState,
+        turn_count: turnCountFromState,
+      }).then((res) => {
+        setXpEarned(res.xp_earned || 0);
       }).catch(() => {
         toast({ title: t("feedback.saveError"), variant: "destructive" });
       });
     }
-  }, [isAuthenticated, scenarioId, scoreFromState, toast, t]);
+  }, [isAuthenticated, scenarioId, scoreFromState, clarityFromState, ecFromState, difficultyFromState, personalityFromState, sessionLengthFromState, turnCountFromState, toast, t]);
 
   useEffect(() => {
     const loadFeedback = async () => {
@@ -204,6 +219,20 @@ const Feedback = () => {
           </div>
         </CardContent>
       </Card>
+
+      {xpEarned > 0 && (
+        <Card className="section-gap border-primary/20 bg-primary/5 shadow-glow">
+          <CardContent className="flex items-center gap-4 p-5 sm:p-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20">
+              <Zap className="h-7 w-7 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">{t("feedback.xpEarned")}</p>
+              <p className="text-3xl font-extrabold text-primary">+{xpEarned} XP</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="section-gap flex flex-col gap-3 sm:flex-row pb-8">
         <Button variant="outline" className="flex-1 rounded-2xl py-5 font-bold tap-scale" onClick={() => navigate(`/setup/${scenarioId}`)}>
