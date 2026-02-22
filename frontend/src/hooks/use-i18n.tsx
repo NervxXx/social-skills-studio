@@ -234,6 +234,7 @@ const translations = {
   "sim.empathy": { en: "Empathy", ru: "Эмпатия" },
   "sim.clarity": { en: "Clarity", ru: "Ясность" },
   "sim.emotionalControl": { en: "Composure", ru: "Самообладание" },
+  "sim.assertiveness": { en: "Assertiveness", ru: "Уверенность" },
   "sim.phase": { en: "Phase", ru: "Фаза" },
   "sim.phaseOpening": { en: "Opening", ru: "Начало" },
   "sim.phaseBuilding": { en: "Building", ru: "Развитие" },

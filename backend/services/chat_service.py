@@ -56,8 +56,9 @@ async def analyze_feedback(
     messages: List[Dict[str, str]],
     score: int,
     language: str = "en",
+    session_skills: Dict[str, float] | None = None,
 ) -> dict:
-    """Анализирует диалог и возвращает структурированный фидбек."""
+    """Analyze dialogue and return structured feedback anchored to session scores."""
     if not OPENROUTER_API_KEY or OPENROUTER_API_KEY == "dummy-key":
         raise ValueError("OPENROUTER_API_KEY not configured")
     svc = _get_langchain_service()
@@ -66,4 +67,5 @@ async def analyze_feedback(
         messages=messages,
         score=score,
         language=language,
+        session_skills=session_skills,
     )

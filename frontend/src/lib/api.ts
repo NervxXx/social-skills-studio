@@ -12,7 +12,7 @@ function getApiBaseUrl(): string {
 }
 const API_URL = getApiBaseUrl();
 
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 30000;
 
 async function request<T>(
   endpoint: string,
@@ -241,6 +241,32 @@ export const statsApi = {
 export const getScenarioById = (id: string) => api.get<ScenarioResponse>(`/scenarios/${id}`);
 
 // Chat API (OpenRouter simulation)
+export interface SimulationResponse {
+  reply: string;
+  emotion_after?: number;
+  empathy?: number;
+  clarity?: number;
+  emotional_control?: number;
+  assertiveness?: number;
+  turn_quality?: number;
+}
+
+export interface FeedbackRequest {
+  scenario_id: string;
+  scenario_title: string;
+  messages: { sender: string; text: string }[];
+  score: number;
+  language: string;
+  session_skills?: Record<string, number>;
+}
+
+export interface FeedbackResponse {
+  skills: Record<string, number>;
+  positives: { phrase: string; note: string }[];
+  negatives: { phrase: string; note: string }[];
+  tip: string;
+}
+
 export const chatApi = {
   simulate: (data: {
     scenario_id: string;
@@ -253,15 +279,7 @@ export const chatApi = {
     user_goal?: string;
     ai_style?: string;
     focus_skill?: string;
-  }) =>
-    api.post<{
-      reply: string;
-      emotion_after?: number;
-      empathy_delta?: number;
-      clarity?: number;
-      emotional_control?: number;
-      turn_quality?: number;
-    }>("/chat/simulate", data),
-  analyzeFeedback: (data: { scenario_id: string; scenario_title: string; messages: { sender: string; text: string }[]; score: number; language: string }) =>
-    api.post<{ skills: Record<string, number>; positives: { phrase: string; note: string }[]; negatives: { phrase: string; note: string }[]; tip: string }>("/chat/analyze-feedback", data),
+  }) => api.post<SimulationResponse>("/chat/simulate", data),
+  analyzeFeedback: (data: FeedbackRequest) =>
+    api.post<FeedbackResponse>("/chat/analyze-feedback", data),
 };

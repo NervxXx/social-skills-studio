@@ -70,6 +70,7 @@ class FeedbackAnalyzeRequest(BaseModel):
     messages: List[ChatMessage] = []
     score: int = 0
     language: str = "en"
+    session_skills: dict | None = None
 
 
 @router.post("/analyze-feedback")
@@ -90,6 +91,7 @@ async def chat_analyze_feedback(
             messages=messages_dict,
             score=data.score,
             language=data.language or "en",
+            session_skills=data.session_skills,
         )
         return result
     except ValueError as e:

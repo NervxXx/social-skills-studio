@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Send, Lightbulb, X, ArrowLeft, TrendingUp, Target, Zap, Brain, Heart, Shield, MessageCircle } from "lucide-react";
+import { Send, Lightbulb, X, ArrowLeft, TrendingUp, Target, Zap, Brain, Heart, Shield, MessageCircle, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,7 +48,13 @@ interface TurnData {
   empathy: number;
   clarity: number;
   emotionalControl: number;
+  assertiveness: number;
   quality: number;
+}
+
+const EWMA_ALPHA = 0.4;
+function ewma(prev: number, cur: number): number {
+  return Math.round(EWMA_ALPHA * cur + (1 - EWMA_ALPHA) * prev);
 }
 
 const TIPS_RU = [
@@ -170,6 +176,7 @@ const Simulation = () => {
   const [empathy, setEmpathy] = useState(50);
   const [clarity, setClarity] = useState(50);
   const [emotionalControl, setEmotionalControl] = useState(50);
+  const [assertiveness, setAssertiveness] = useState(50);
   const [showHint, setShowHint] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
   const [turnHistory, setTurnHistory] = useState<TurnData[]>([]);
@@ -225,25 +232,34 @@ const Simulation = () => {
       setMessages((prev) => [...prev, { id: prev.length, text: res.reply, sender: "ai" }]);
 
       const newEmotion = typeof res.emotion_after === "number" ? res.emotion_after : Math.min(100, emotion + 10);
-      const newEmpathyDelta = typeof res.empathy_delta === "number" ? res.empathy_delta : 5;
-      const newClarity = typeof res.clarity === "number" ? res.clarity : clarity;
-      const newEC = typeof res.emotional_control === "number" ? res.emotional_control : emotionalControl;
-      const newQuality = typeof res.turn_quality === "number" ? res.turn_quality : 5;
+      const turnEmpathy = typeof res.empathy === "number" ? res.empathy : 50;
+      const turnClarity = typeof res.clarity === "number" ? res.clarity : 50;
+      const turnEC = typeof res.emotional_control === "number" ? res.emotional_control : 50;
+      const turnAS = typeof res.assertiveness === "number" ? res.assertiveness : 50;
+      const turnQuality = typeof res.turn_quality === "number" ? res.turn_quality : 5;
 
       setEmotion(newEmotion);
       setEmotionHistory((prev) => [...prev, newEmotion]);
-      setEmpathy((e) => Math.min(100, Math.max(0, e + newEmpathyDelta)));
-      setClarity(newClarity);
-      setEmotionalControl(newEC);
+
+      const smoothEmpathy = ewma(empathy, turnEmpathy);
+      const smoothClarity = ewma(clarity, turnClarity);
+      const smoothEC = ewma(emotionalControl, turnEC);
+      const smoothAS = ewma(assertiveness, turnAS);
+      setEmpathy(smoothEmpathy);
+      setClarity(smoothClarity);
+      setEmotionalControl(smoothEC);
+      setAssertiveness(smoothAS);
+
       setTurnHistory((prev) => [...prev, {
         emotion: newEmotion,
-        empathy: Math.min(100, Math.max(0, empathy + newEmpathyDelta)),
-        clarity: newClarity,
-        emotionalControl: newEC,
-        quality: newQuality,
+        empathy: turnEmpathy,
+        clarity: turnClarity,
+        emotionalControl: turnEC,
+        assertiveness: turnAS,
+        quality: turnQuality,
       }]);
 
-      if (newEmpathyDelta > 6) {
+      if (turnEmpathy > 80) {
         setShowFlash(true);
         setTimeout(() => setShowFlash(false), 1500);
       }
@@ -306,6 +322,7 @@ const Simulation = () => {
           <SkillBar label={t("sim.empathy")} value={empathy} icon={Heart} color="hsl(var(--primary))" />
           <SkillBar label={t("sim.clarity")} value={clarity} icon={Brain} color="hsl(var(--secondary))" />
           <SkillBar label={t("sim.emotionalControl")} value={emotionalControl} icon={Shield} color="hsl(var(--success))" />
+          <SkillBar label={t("sim.assertiveness")} value={assertiveness} icon={Swords} color="hsl(var(--warning))" />
         </div>
         {empathy > 80 && (
           <div className="mt-2 flex items-center gap-1.5">
@@ -427,7 +444,8 @@ const Simulation = () => {
               onClick={() => navigate("/feedback", { state: {
                 scenarioId, score: empathy, messages, scenario,
                 difficulty, personality, sessionLength, turnCount,
-                clarity, emotionalControl,
+                clarity, emotionalControl, assertiveness,
+                turnHistory,
               } })}
             >
               <X className="mr-1 h-3.5 w-3.5" /> {t("sim.endSession")}
@@ -483,13 +501,20 @@ const Simulation = () => {
         )}
 
         {/* Mobile mini-bar */}
-        <div className="lg:hidden flex items-center gap-3 border-t border-border/50 px-5 py-2 bg-card/60 backdrop-blur-sm">
-          <div className="flex items-center gap-1.5 flex-1">
+        <div className="lg:hidden flex items-center gap-2 border-t border-border/50 px-4 py-2 bg-card/60 backdrop-blur-sm">
+          <div className="flex items-center gap-1 flex-1">
             <Heart className="h-3 w-3 text-primary" />
             <div className="h-1.5 flex-1 rounded-full bg-muted/50 overflow-hidden">
               <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${empathy}%` }} />
             </div>
             <span className="text-[10px] font-bold text-primary tabular-nums">{empathy}</span>
+          </div>
+          <div className="flex items-center gap-1 flex-1">
+            <Brain className="h-3 w-3 text-secondary" />
+            <div className="h-1.5 flex-1 rounded-full bg-muted/50 overflow-hidden">
+              <div className="h-full rounded-full bg-secondary transition-all duration-500" style={{ width: `${clarity}%` }} />
+            </div>
+            <span className="text-[10px] font-bold text-secondary tabular-nums">{clarity}</span>
           </div>
           <div className="w-px h-4 bg-border" />
           <div className="flex items-center gap-1.5">

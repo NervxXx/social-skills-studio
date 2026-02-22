@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,15 @@ import { useI18n } from "@/hooks/use-i18n";
 import { useAuth } from "@/contexts/AuthContext";
 import { simulationsApi } from "@/lib/api";
 
+interface TurnData {
+  emotion: number;
+  empathy: number;
+  clarity: number;
+  emotionalControl: number;
+  assertiveness: number;
+  quality: number;
+}
+
 interface FeedbackData {
   skills: Record<string, number>;
   positives: { phrase: string; note: string }[];
@@ -18,16 +27,28 @@ interface FeedbackData {
   tip: string;
 }
 
-const buildFallbackFeedback = (score: number, t: (k: string) => string): FeedbackData => {
-  const s = Math.max(0, Math.min(100, score));
-  const variation = (v: number) => Math.max(0, Math.min(100, s + v));
+function computeSessionSkills(
+  turnHistory: TurnData[],
+  empathyEwma: number,
+  clarityEwma: number,
+  ecEwma: number,
+  asEwma: number,
+): Record<string, number> {
+  if (turnHistory.length === 0) {
+    return { empathy: empathyEwma, clarity: clarityEwma, emotional_control: ecEwma, assertiveness: asEwma };
+  }
   return {
-    skills: {
-      empathy: variation(5),
-      clarity: variation(-3),
-      emotional_control: variation(8),
-      assertiveness: variation(-5),
-    },
+    empathy: empathyEwma,
+    clarity: clarityEwma,
+    emotional_control: ecEwma,
+    assertiveness: asEwma,
+  };
+}
+
+const buildFallbackFeedback = (sessionSkills: Record<string, number>, t: (k: string) => string): FeedbackData => {
+  const s = Math.max(0, Math.min(100, sessionSkills.empathy ?? 50));
+  return {
+    skills: { ...sessionSkills },
     positives: s >= 60
       ? [
           { phrase: t("phrase.pos1"), note: t("phrase.pos1.note") },
@@ -59,12 +80,25 @@ const Feedback = () => {
   const personalityFromState = (location.state as any)?.personality ?? 50;
   const sessionLengthFromState = (location.state as any)?.sessionLength || "medium";
   const turnCountFromState = (location.state as any)?.turnCount ?? 0;
-  const clarityFromState = (location.state as any)?.clarity ?? 0;
-  const ecFromState = (location.state as any)?.emotionalControl ?? 0;
+  const clarityFromState = (location.state as any)?.clarity ?? 50;
+  const ecFromState = (location.state as any)?.emotionalControl ?? 50;
+  const asFromState = (location.state as any)?.assertiveness ?? 50;
+  const turnHistoryFromState = (location.state as any)?.turnHistory as TurnData[] | undefined;
   const [scenario, setScenario] = useState(scenarioFromState || fallbackScenarios.find((s) => s.id === scenarioId) || fallbackScenarios[0]);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
-  const overallScore = scoreFromState ?? 0;
+  const overallScore = scoreFromState ?? 50;
+
+  const sessionSkills = useMemo(() =>
+    computeSessionSkills(
+      turnHistoryFromState || [],
+      scoreFromState ?? 50,
+      clarityFromState,
+      ecFromState,
+      asFromState,
+    ),
+    [turnHistoryFromState, scoreFromState, clarityFromState, ecFromState, asFromState],
+  );
 
   useEffect(() => {
     getScenarioById(scenarioId).then((s) => setScenario(s)).catch(() => {});
@@ -75,9 +109,9 @@ const Feedback = () => {
       simulationsApi.save({
         scenario_id: scenarioId,
         score: scoreFromState,
-        empathy_score: scoreFromState,
-        clarity_score: clarityFromState,
-        emotional_control_score: ecFromState,
+        empathy_score: sessionSkills.empathy,
+        clarity_score: sessionSkills.clarity,
+        emotional_control_score: sessionSkills.emotional_control,
         difficulty: difficultyFromState,
         personality: personalityFromState,
         session_length: sessionLengthFromState,
@@ -88,7 +122,7 @@ const Feedback = () => {
         toast({ title: t("feedback.saveError"), variant: "destructive" });
       });
     }
-  }, [isAuthenticated, scenarioId, scoreFromState, clarityFromState, ecFromState, difficultyFromState, personalityFromState, sessionLengthFromState, turnCountFromState, toast, t]);
+  }, [isAuthenticated, scenarioId, scoreFromState, sessionSkills, difficultyFromState, personalityFromState, sessionLengthFromState, turnCountFromState, toast, t]);
 
   useEffect(() => {
     const loadFeedback = async () => {
@@ -100,29 +134,30 @@ const Feedback = () => {
             messages: messagesFromState.map((m) => ({ sender: m.sender, text: m.text })),
             score: overallScore,
             language: locale,
+            session_skills: sessionSkills,
           });
           setFeedback({
-            skills: result.skills || {},
+            skills: result.skills || sessionSkills,
             positives: result.positives || [],
             negatives: result.negatives || [],
             tip: result.tip || t("feedback.tipText"),
           });
         } catch {
-          setFeedback(buildFallbackFeedback(overallScore, t));
+          setFeedback(buildFallbackFeedback(sessionSkills, t));
         }
       } else {
-        setFeedback(buildFallbackFeedback(overallScore, t));
+        setFeedback(buildFallbackFeedback(sessionSkills, t));
       }
     };
     loadFeedback();
-  }, [scenarioId, scenario, messagesFromState, scoreFromState, overallScore, locale, t]);
+  }, [scenarioId, scenario, messagesFromState, scoreFromState, overallScore, locale, t, sessionSkills]);
 
-  const fd = feedback || buildFallbackFeedback(overallScore, t);
+  const fd = feedback || buildFallbackFeedback(sessionSkills, t);
   const skills = [
-    { key: "skill.empathy" as const, score: fd.skills.empathy ?? overallScore },
-    { key: "skill.clarity" as const, score: fd.skills.clarity ?? overallScore },
-    { key: "skill.emotionalControl" as const, score: fd.skills.emotional_control ?? overallScore },
-    { key: "skill.assertiveness" as const, score: fd.skills.assertiveness ?? overallScore },
+    { key: "skill.empathy" as const, score: fd.skills.empathy ?? sessionSkills.empathy },
+    { key: "skill.clarity" as const, score: fd.skills.clarity ?? sessionSkills.clarity },
+    { key: "skill.emotionalControl" as const, score: fd.skills.emotional_control ?? sessionSkills.emotional_control },
+    { key: "skill.assertiveness" as const, score: fd.skills.assertiveness ?? sessionSkills.assertiveness },
   ];
   const positives = fd.positives.length >= 2 ? fd.positives : [
     { phrase: t("phrase.pos1"), note: t("phrase.pos1.note") },

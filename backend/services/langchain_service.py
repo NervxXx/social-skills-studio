@@ -12,13 +12,19 @@ from prompts import build_simulation_system, SCENARIO_ROLES, DEFAULT_ROLE
 
 logger = logging.getLogger(__name__)
 
-# Full format: |E:65|A:3|CL:70|EC:80|Q:7|
+# New format: |E:65|EM:72|CL:70|EC:80|AS:60|Q:7|
+NEW_RATING = re.compile(
+    r"\|\s*E\s*:\s*(\d+)\s*\|\s*EM\s*:\s*(\d+)\s*\|"
+    r"\s*CL\s*:\s*(\d+)\s*\|\s*EC\s*:\s*(\d+)\s*\|\s*AS\s*:\s*(\d+)\s*\|\s*Q\s*:\s*(\d+)\s*\|",
+    re.IGNORECASE,
+)
+# Legacy full format: |E:65|A:3|CL:70|EC:80|Q:7|
 FULL_RATING = re.compile(
     r"\|\s*E\s*:\s*(\d+)\s*\|\s*A\s*:\s*([+-]?\d+)\s*\|"
     r"\s*CL\s*:\s*(\d+)\s*\|\s*EC\s*:\s*(\d+)\s*\|\s*Q\s*:\s*(\d+)\s*\|",
     re.IGNORECASE,
 )
-# Legacy format: |E:65|A:3|
+# Legacy minimal format: |E:65|A:3|
 LEGACY_RATING = re.compile(r"\|\s*E\s*:\s*(\d+)\s*\|\s*A\s*:\s*([+-]?\d+)\s*\|", re.IGNORECASE)
 
 META_STRIP = re.compile(
@@ -29,29 +35,45 @@ META_STRIP = re.compile(
 
 
 def _parse_response_with_rating(content: str) -> dict:
-    """Parse reply and rating tags. Returns dict with reply, emotion_after, empathy_delta, clarity, emotional_control, turn_quality."""
-    defaults = {"emotion_after": 60, "empathy_delta": 5, "clarity": 65, "emotional_control": 70, "turn_quality": 5}
+    """Parse reply and rating tags. Returns dict with reply, emotion_after, empathy, clarity, emotional_control, assertiveness, turn_quality."""
+    defaults = {"emotion_after": 50, "empathy": 50, "clarity": 50, "emotional_control": 50, "assertiveness": 50, "turn_quality": 5}
+
+    new = NEW_RATING.search(content)
+    if new:
+        reply = content[: new.start()].strip().rstrip("\n")
+        return {
+            "reply": reply,
+            "emotion_after": min(100, max(0, int(new.group(1)))),
+            "empathy": min(100, max(0, int(new.group(2)))),
+            "clarity": min(100, max(0, int(new.group(3)))),
+            "emotional_control": min(100, max(0, int(new.group(4)))),
+            "assertiveness": min(100, max(0, int(new.group(5)))),
+            "turn_quality": min(10, max(1, int(new.group(6)))),
+        }
 
     full = FULL_RATING.search(content)
     if full:
         reply = content[: full.start()].strip().rstrip("\n")
+        empathy_delta = max(-15, min(15, int(full.group(2))))
         return {
             "reply": reply,
             "emotion_after": min(100, max(0, int(full.group(1)))),
-            "empathy_delta": max(-5, min(10, int(full.group(2)))),
+            "empathy": min(100, max(0, 50 + empathy_delta * 4)),
             "clarity": min(100, max(0, int(full.group(3)))),
             "emotional_control": min(100, max(0, int(full.group(4)))),
+            "assertiveness": 50,
             "turn_quality": min(10, max(1, int(full.group(5)))),
         }
 
     legacy = LEGACY_RATING.search(content)
     if legacy:
         reply = content[: legacy.start()].strip().rstrip("\n")
+        empathy_delta = max(-15, min(15, int(legacy.group(2))))
         return {
             "reply": reply,
             "emotion_after": min(100, max(0, int(legacy.group(1)))),
-            "empathy_delta": max(-5, min(10, int(legacy.group(2)))),
-            **{k: defaults[k] for k in ("clarity", "emotional_control", "turn_quality")},
+            "empathy": min(100, max(0, 50 + empathy_delta * 4)),
+            **{k: defaults[k] for k in ("clarity", "emotional_control", "assertiveness", "turn_quality")},
         }
 
     reply = META_STRIP.sub("", content).strip().rstrip("\n")
@@ -99,7 +121,7 @@ class LangChainService:
         ai_style: str = "realistic",
         focus_skill: str = "all",
     ) -> dict:
-        """Генерирует ответ AI. Возвращает dict с reply, emotion_after, empathy_delta, clarity, emotional_control, turn_quality."""
+        """Generate AI response. Returns dict with reply, emotion_after, empathy, clarity, emotional_control, assertiveness, turn_quality."""
         lang_rule = (
             "You MUST respond ONLY in Russian. All your messages must be in Russian."
             if language == "ru"
@@ -141,13 +163,15 @@ class LangChainService:
         messages: List[Dict[str, str]],
         score: int,
         language: str,
+        session_skills: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
-        """Анализирует диалог и возвращает структурированный фидбек (skills, positives, negatives, tip)."""
+        """Analyze dialogue and return structured feedback anchored to session scores."""
         lang_instruction = "Respond ONLY in Russian. All output must be in Russian." if language == "ru" else "Respond in English."
         from prompts import FEEDBACK_ANALYSIS_TEMPLATE
         system_feedback = FEEDBACK_ANALYSIS_TEMPLATE.format(
             scenario_title=scenario_title,
             score=score,
+            session_skills_json=json.dumps(session_skills or {}, indent=2),
             lang_instruction=lang_instruction,
         )
         conv_text = "\n".join(
@@ -159,7 +183,7 @@ class LangChainService:
         llm_analysis = ChatOpenAI(
             model=model_config["model"],
             temperature=0.3,
-            max_tokens=600,
+            max_tokens=800,
             api_key=self.api_key,
             base_url=openrouter_config["base_url"],
             default_headers=openrouter_config["default_headers"],
@@ -172,14 +196,20 @@ class LangChainService:
                 HumanMessage(content=f"Conversation:\n{conv_text}"),
             ])
             text = (resp.content or "").strip()
-            # Remove markdown code blocks if present
             if text.startswith("```"):
                 text = text.split("```")[1]
                 if text.startswith("json"):
                     text = text[4:]
             data = json.loads(text)
+            result_skills = data.get("skills", {})
+            if session_skills:
+                for key in ("empathy", "clarity", "emotional_control", "assertiveness"):
+                    anchor = session_skills.get(key, 50)
+                    llm_val = result_skills.get(key, anchor)
+                    clamped = max(anchor - 15, min(anchor + 15, llm_val))
+                    result_skills[key] = round(clamped)
             return {
-                "skills": data.get("skills", {}),
+                "skills": result_skills,
                 "positives": data.get("positives", []),
                 "negatives": data.get("negatives", []),
                 "tip": data.get("tip", ""),
