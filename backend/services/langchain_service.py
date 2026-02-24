@@ -120,6 +120,8 @@ class LangChainService:
         user_goal: str = "Show empathy",
         ai_style: str = "realistic",
         focus_skill: str = "all",
+        user_emotion_hint: str = "",
+        character_emotion_history: str = "",
     ) -> dict:
         """Generate AI response. Returns dict with reply, emotion_after, empathy, clarity, emotional_control, assertiveness, turn_quality."""
         lang_rule = (
@@ -138,6 +140,8 @@ class LangChainService:
             ai_style=ai_style,
             focus_skill=focus_skill,
             include_rating_suffix=True,
+            user_emotion_hint=user_emotion_hint,
+            character_emotion_history=character_emotion_history,
         )
         lc_messages: List[BaseMessage] = [SystemMessage(content=system)]
         for m in messages:

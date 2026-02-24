@@ -41,6 +41,7 @@ interface Message {
   id: number;
   text: string;
   sender: "user" | "ai";
+  feedback?: string;
 }
 
 interface TurnData {
@@ -181,6 +182,8 @@ const Simulation = () => {
   const [showFlash, setShowFlash] = useState(false);
   const [turnHistory, setTurnHistory] = useState<TurnData[]>([]);
   const [emotionHistory, setEmotionHistory] = useState<number[]>([initialEmotion]);
+  const [smoothedEmotion, setSmoothedEmotion] = useState<number | null>(null);
+  const [serverHint, setServerHint] = useState<string>("");
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -228,10 +231,25 @@ const Simulation = () => {
         user_goal: goal,
         ai_style: aiStyle,
         focus_skill: focusSkill,
+        emotion_history: emotionHistory,
+        last_smoothed_emotion: smoothedEmotion ?? undefined,
+        turn_index: messages.filter((m) => m.sender === "user").length,
       });
-      setMessages((prev) => [...prev, { id: prev.length, text: res.reply, sender: "ai" }]);
+      const displayEmotion = typeof res.smoothed_emotion_after === "number"
+        ? res.smoothed_emotion_after
+        : typeof res.emotion_after === "number"
+          ? res.emotion_after
+          : Math.min(100, emotion + 10);
+      if (typeof res.smoothed_emotion_after === "number") setSmoothedEmotion(res.smoothed_emotion_after);
+      if (res.hint) setServerHint(res.hint);
+      setMessages((prev) => [...prev, {
+        id: prev.length,
+        text: res.reply,
+        sender: "ai",
+        feedback: res.feedback,
+      }]);
 
-      const newEmotion = typeof res.emotion_after === "number" ? res.emotion_after : Math.min(100, emotion + 10);
+      const newEmotion = displayEmotion;
       const turnEmpathy = typeof res.empathy === "number" ? res.empathy : 50;
       const turnClarity = typeof res.clarity === "number" ? res.clarity : 50;
       const turnEC = typeof res.emotional_control === "number" ? res.emotional_control : 50;
@@ -251,7 +269,7 @@ const Simulation = () => {
       setAssertiveness(smoothAS);
 
       setTurnHistory((prev) => [...prev, {
-        emotion: newEmotion,
+        emotion: typeof res.emotion_after === "number" ? res.emotion_after : newEmotion,
         empathy: turnEmpathy,
         clarity: turnClarity,
         emotionalControl: turnEC,
@@ -276,7 +294,8 @@ const Simulation = () => {
   };
 
   const hintKey = `hint.${scenarioId}` as any;
-  const hintText = t(hintKey) !== hintKey ? t(hintKey) : t("hint.default");
+  const fallbackHint = t(hintKey) !== hintKey ? t(hintKey) : t("hint.default");
+  const hintText = serverHint || fallbackHint;
 
   const phaseLabels = {
     opening: t("sim.phaseOpening"),
@@ -469,9 +488,16 @@ const Simulation = () => {
                   <AvatarFallback className="bg-secondary/15 text-secondary text-xs font-bold">AI</AvatarFallback>
                 </Avatar>
               )}
-              <div className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-soft ${m.sender === "user" ? "gradient-primary text-primary-foreground rounded-br-lg" : "bg-card text-foreground border border-border rounded-bl-lg"
-                }`}>
-                {m.text}
+              <div className={`max-w-[80%] sm:max-w-[70%] ${m.sender === "user" ? "" : "space-y-1"}`}>
+                <div className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-soft ${m.sender === "user" ? "gradient-primary text-primary-foreground rounded-br-lg" : "bg-card text-foreground border border-border rounded-bl-lg"
+                  }`}>
+                  {m.text}
+                </div>
+                {m.sender === "ai" && m.feedback && (
+                  <p className="text-[11px] text-muted-foreground pl-1 italic border-l-2 border-secondary/40">
+                    {m.feedback}
+                  </p>
+                )}
               </div>
             </div>
           ))}

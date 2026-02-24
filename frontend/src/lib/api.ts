@@ -244,11 +244,14 @@ export const getScenarioById = (id: string) => api.get<ScenarioResponse>(`/scena
 export interface SimulationResponse {
   reply: string;
   emotion_after?: number;
+  smoothed_emotion_after?: number;
   empathy?: number;
   clarity?: number;
   emotional_control?: number;
   assertiveness?: number;
   turn_quality?: number;
+  hint?: string;
+  feedback?: string;
 }
 
 export interface FeedbackRequest {
@@ -279,6 +282,9 @@ export const chatApi = {
     user_goal?: string;
     ai_style?: string;
     focus_skill?: string;
+    emotion_history?: number[];
+    last_smoothed_emotion?: number | null;
+    turn_index?: number;
   }) => api.post<SimulationResponse>("/chat/simulate", data),
   analyzeFeedback: (data: FeedbackRequest) =>
     api.post<FeedbackResponse>("/chat/analyze-feedback", data),

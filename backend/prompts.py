@@ -727,6 +727,10 @@ SIMULATION PARAMETERS
 
 User's training goal: {user_goal}
 
+{user_emotion_hint}
+
+{character_emotion_history}
+
 ═══════════════════════════════════
 YOUR COGNITIVE ENGINE — how to process each user message
 ═══════════════════════════════════
@@ -927,6 +931,8 @@ def build_simulation_system(
     ai_style: str = "realistic",
     focus_skill: str = "all",
     include_rating_suffix: bool = True,
+    user_emotion_hint: str = "",
+    character_emotion_history: str = "",
 ) -> str:
     """Assembles the full system prompt for a simulation session."""
     difficulty_mod = DIFFICULTY_MODIFIERS.get(difficulty, DIFFICULTY_MODIFIERS["normal"])
@@ -934,6 +940,24 @@ def build_simulation_system(
     style_mod = AI_STYLE_MODIFIERS.get(ai_style, AI_STYLE_MODIFIERS["realistic"])
     focus_mod = FOCUS_SKILL_MODIFIERS.get(focus_skill, "")
     focus_line = f"SKILL FOCUS:\n{focus_mod}" if focus_mod else ""
+
+    emotion_block = ""
+    if user_emotion_hint:
+        emotion_block = f"""═══════════════════════════════════
+USER EMOTION (detected from their last message)
+═══════════════════════════════════
+
+{user_emotion_hint}
+Use this as a HINT — react authentically to what you infer from their words AND this signal.
+
+"""
+
+    character_block = ""
+    if character_emotion_history:
+        character_block = f"""═══════════════════════════════════
+{character_emotion_history}
+
+"""
 
     params = dict(
         scenario_title=scenario_title,
@@ -945,6 +969,8 @@ def build_simulation_system(
         style_modifier=style_mod,
         focus_modifier=focus_line,
         lang_rule=lang_rule,
+        user_emotion_hint=emotion_block,
+        character_emotion_history=character_block,
     )
     if include_rating_suffix:
         return SIMULATION_SYSTEM_TEMPLATE.format(**params)

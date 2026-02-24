@@ -22,12 +22,15 @@ class ChatRequest(BaseModel):
     scenario_title: str = "Conversation"
     scenario_description: str = ""
     messages: List[ChatMessage] = []
-    language: str | None = None
+    language: str = "ru"
     difficulty: str = "normal"  # calm, normal, challenging
     personality: int = 50  # 0-100: calm / nervous / aggressive (AI character mood)
     user_goal: str = "Show empathy"
     ai_style: str = "realistic"  # realistic, expressive, laconic
     focus_skill: str = "all"  # all, empathy, clarity, control
+    emotion_history: List[int] | None = None  # последние E (0-100) персонажа для контекста
+    last_smoothed_emotion: float | None = None  # для сглаживания E (EWMA)
+    turn_index: int = 0  # номер хода (для подсказок)
 
 
 @router.post("/simulate")
@@ -56,6 +59,9 @@ async def chat_simulate(
             user_goal=data.user_goal,
             ai_style=data.ai_style,
             focus_skill=data.focus_skill,
+            emotion_history=data.emotion_history,
+            last_smoothed_emotion=data.last_smoothed_emotion,
+            turn_index=data.turn_index,
         )
         return result
     except ValueError as e:

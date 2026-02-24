@@ -30,15 +30,22 @@ from services.seed_service import seed_all
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         check_secret_key()
     except ValueError as e:
-        import logging
-        logging.warning(f"SECRET_KEY: {e}")
-    create_db_and_tables()
-    from sqlmodel import Session
-    with Session(engine) as db:
-        seed_all(db)
+        logger.warning("SECRET_KEY: %s", e)
+    try:
+        create_db_and_tables()
+        from sqlmodel import Session
+        with Session(engine) as db:
+            seed_all(db)
+    except Exception as e:
+        logger.warning(
+            "Database unavailable at startup (chat/simulate will work without DB): %s",
+            e,
+        )
     yield
 
 
